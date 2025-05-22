@@ -1,0 +1,23 @@
+# Use official Python image with specific version
+FROM python:3.9.18-slim-bullseye
+
+# Create a non-root user and working directory
+RUN useradd -m appuser && \
+    mkdir -p /app && \
+    chown appuser:appuser /app
+WORKDIR /app
+USER appuser
+
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY *.py ./
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+
+# Run the application
+CMD ["python", "scheduler.py"]
